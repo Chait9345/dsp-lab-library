@@ -1,0 +1,1154 @@
+=====================================================================
+DSP LAB - EXAM CODE GUIDE : ALL CODES
+ECM_3141 - Experiments 1-7 and 10
+Experiments 1-6 = MATLAB, Experiments 7 and 10 = C (TMS320C6748)
+=====================================================================
+
+
+#####################################################################
+# EXPERIMENT 1: ANALYSIS OF SIGNALS IN TIME DOMAIN (MATLAB)
+#####################################################################
+
+%---------------------------------------------------------------
+% Patterns
+%---------------------------------------------------------------
+
+% Signal skeleton (use for EVERY question)
+clc; clear; close all;
+n = 0:15; % index
+x = (n>=0); % signal from n
+stem(n,x); title('x[n]'); xlabel('n'); ylabel('Amplitude');
+
+% Unit step as a function (cleanest trick)
+u = @(n) double(n>=0); % then u(n), u(n-5), u(n+1) all work
+x = u(n) - u(n-5);
+
+% Many plots in one figure
+subplot(3,1,1); stem(n,x1); % rows, cols, position
+subplot(3,1,2); stem(n,x2);
+
+% Output index for conv / xcorr
+ny = (nx(1)+nh(1)) : (nx(end)+nh(end)); % start = sum of starts
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-1: Unit step, delayed step (delay 5), step with amplitude 5,
+% rectangular window of length 5, ramp. (n = 0:15)
+%---------------------------------------------------------------
+clc; clear; close all;
+n = 0:15;
+u = (n>=0); % unit step
+u5 = (n-5)>=0; % delayed step
+a5 = 5*u; % amplitude-scaled step
+xn = u - u5; % rectangular window u[n]-u[n-5]
+xr = n.*u; % ramp
+subplot(3,2,1); stem(n,u); title('Unit step');
+subplot(3,2,2); stem(n,u5); title('Delayed step');
+subplot(3,2,3); stem(n,a5); title('Scaled step');
+subplot(3,2,4); stem(n,xn); title('Window');
+subplot(3,2,5); stem(n,xr); title('Ramp');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-2: Sine wave (200 Hz, amplitude 5) at different sampling
+% frequencies (1 kHz and 10 kHz).
+%---------------------------------------------------------------
+clc; clear; close all;
+f = 200;
+Fs = 1000; t = 0:1/Fs:1/f; % 1 period
+subplot(3,1,1); stem(t,5*sin(2*pi*f*t)); title('Fs=1000, 1 cycle');
+Fs = 10000; t = 0:1/Fs:1/f;
+subplot(3,1,2); stem(t,5*sin(2*pi*f*t)); title('Fs=10000, 1 cycle');
+t = 0:1/Fs:2/f; % 2 periods
+subplot(3,1,3); stem(t,5*sin(2*pi*f*t)); title('Fs=10000, 2 cycles');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-3: Convolution of x[n] = u[n]-u[n-5] and y[n] = [1 2 3 4 5],
+% n = 0:10. Use conv.
+% (Note: manual uses stem(n,z), which errors; use 0:length(z)-1)
+%---------------------------------------------------------------
+clc; clear; close all;
+n = 0:10;
+x = (n>=0) - ((n-5)>=0);
+y = [1 2 3 4 5];
+z = conv(x,y); % length 11+5-1 = 15
+stem(0:length(z)-1, z); title('Convolution');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-4: Cross-correlation of x[n] = {3,11,7,0,-1,4,2} and
+% y[n] = x[n-2] + noise.
+%---------------------------------------------------------------
+clc; clear; close all;
+x = [3 11 7 0 -1 4 2];
+nx = -3:3; % underlined 0 is n=0
+ny = nx + 2; % delayed by 2
+y = x + randn(1,length(x)); % noisy copy
+nz = (nx(1)+ny(1)) : (nx(end)+ny(end));
+z = xcorr(x,y);
+stem(nz,z); title('Cross-correlation'); % peak at n = 2
+
+
+%---------------------------------------------------------------
+% EXERCISE Q1 (a): Plot (-1/2)^k, 2^k, (-2)^k for k = 0 to 15.
+%---------------------------------------------------------------
+clc; clear; close all;
+k = 0:15;
+subplot(3,1,1); stem(k,(-1/2).^k); title('(-1/2)^k');
+subplot(3,1,2); stem(k,2.^k); title('2^k');
+subplot(3,1,3); stem(k,(-2).^k); title('(-2)^k');
+
+
+%---------------------------------------------------------------
+% EXERCISE Q1 (b): Square wave with duty cycle 25%, 50%, 75%.
+%---------------------------------------------------------------
+clc; clear; close all;
+f = 10; Fs = 1000; t = 0:1/Fs:0.5;
+subplot(3,1,1); plot(t,square(2*pi*f*t,25)); title('25%');
+subplot(3,1,2); plot(t,square(2*pi*f*t,50)); title('50%');
+subplot(3,1,3); plot(t,square(2*pi*f*t,75)); title('75%');
+
+
+%---------------------------------------------------------------
+% EXERCISE Q1 (c): Triangular wave (sawtooth).
+%---------------------------------------------------------------
+clc; clear; close all;
+f = 10; Fs = 1000; t = 0:1/Fs:0.5;
+x = sawtooth(2*pi*f*t, 0.5); % 0.5 = triangle (1 = ramp)
+plot(t,x); title('Triangular wave');
+
+
+%---------------------------------------------------------------
+% EXERCISE Q1 (d): Multi-tone signal with 10 Hz, 30 Hz, 60 Hz.
+%---------------------------------------------------------------
+clc; clear; close all;
+Fs = 1000; t = 0:1/Fs:0.5;
+x = sin(2*pi*10*t) + sin(2*pi*30*t) + sin(2*pi*60*t);
+plot(t,x); title('Multi-tone'); xlabel('Time (s)');
+
+
+%---------------------------------------------------------------
+% EXERCISE Q2: Plot for n = -10 to 10 (complex -> magnitude and angle):
+% (a) u[n]-u[n-3] (b) sin(n*pi/3)u[n] (c) 0.5^n e^(j*pi*n/2)
+%---------------------------------------------------------------
+clc; clear; close all;
+n = -10:10;
+u = @(n) double(n>=0);
+x1 = u(n) - u(n-3);
+x2 = sin(n*pi/3).*u(n);
+x3 = (0.5.^n).*exp(1j*pi*n/2); % complex
+subplot(4,1,1); stem(n,x1); title('u[n]-u[n-3]');
+subplot(4,1,2); stem(n,x2); title('sin(n\pi/3)u[n]');
+subplot(4,1,3); stem(n,abs(x3)); title('|x3|');
+subplot(4,1,4); stem(n,angle(x3)); title('angle x3');
+
+
+%---------------------------------------------------------------
+% EXERCISE Q3: Differentiator y[n] = x[n] - x[n-1]. Test with
+% (a) 5(u[n]-u[n-20])
+% (b) (u[n]-u[n-10]) + (20-n)(u[n-10]-u[n-20])
+% (c) sin(pi*n/25)(u[n]-u[n-100])
+%---------------------------------------------------------------
+clc; clear; close all;
+u = @(n) double(n>=0);
+n = 0:120;
+xa = 5*(u(n)-u(n-20));
+xb = (u(n)-u(n-10)) + (20-n).*(u(n-10)-u(n-20));
+xc = sin(pi*n/25).*(u(n)-u(n-100));
+b = [1 -1]; a = 1; % y[n] = x[n] - x[n-1]
+ya = filter(b,a,xa); yb = filter(b,a,xb); yc = filter(b,a,xc);
+subplot(3,2,1); stem(n,xa); title('xa'); subplot(3,2,2); stem(n,ya); title('ya');
+subplot(3,2,3); stem(n,xb); title('xb'); subplot(3,2,4); stem(n,yb); title('yb');
+subplot(3,2,5); stem(n,xc); title('xc'); subplot(3,2,6); stem(n,yc); title('yc');
+% Comment: (a) spikes at the two edges, (b) +1 / -1 on the slopes,
+% (c) cosine-like. Good for slow signals, amplifies noise / fast changes.
+
+
+%---------------------------------------------------------------
+% EXERCISE Q4: 80 Hz sine + white Gaussian noise (SNR 10 dB, awgn).
+% Find and plot autocorrelation.
+%---------------------------------------------------------------
+clc; clear; close all;
+Fs = 1000; t = 0:1/Fs:1;
+x = sin(2*pi*80*t);
+y = awgn(x,10,'measured'); % add noise, SNR = 10 dB
+[r,lag] = xcorr(y); % autocorrelation
+subplot(2,1,1); plot(t,y); title('Noisy sine');
+subplot(2,1,2); plot(lag,r); title('Autocorrelation');
+% Peak at lag 0; repeats every Fs/f = 12.5 samples.
+% If awgn is missing: y = x + sqrt(mean(x.^2)/10)*randn(size(x));
+
+
+
+#####################################################################
+# EXPERIMENT 2: SIGNALS AND SYSTEMS IN Z-DOMAIN (MATLAB)
+#####################################################################
+
+%---------------------------------------------------------------
+% Patterns
+%---------------------------------------------------------------
+
+% Diff. equation -> b, a -> response (the core of this lab)
+a = [1 -0.6 -0.16]; % y coefficients (LHS)
+b = [5 0 0]; % x coefficients
+y = filter(b,a,x); % output for any input x
+
+% Impulse response (two ways)
+h = filter(b,a,[1 zeros(1,N-1)]); % feed delta
+[h,n] = impz(b,a,N); % or direct
+
+% With initial conditions
+ic = filtic(b,a,[y(-1) y(-2)],[x(-1) x(-2)]);
+y = filter(b,a,x,ic);
+
+% Analysis toolkit
+[r,p,k] = residuez(b,a); % partial fractions
+[z,p,k] = tf2zp(b,a); % zeros, poles, gain
+[b,a] = zp2tf(z,p,k); % back to b, a
+zplane(b,a); % pole-zero plot
+[h,w] = freqz(b,a); % frequency response
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-1: Impulse response of y[n] - 0.6y[n-1] - 0.16y[n-2] = 5x[n].
+%---------------------------------------------------------------
+clc; clear; close all;
+a = [1 -0.6 -0.16];
+b = [5 0 0];
+N = 16; n = 0:N-1;
+x = [1 zeros(1,N-1)]; % impulse
+h = filter(b,a,x);
+stem(n,h); title('Impulse response');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-2: y(n) = 1/3[x(n)+x(n-1)+x(n-2)] + 0.95y(n-1) - 0.9025y(n-2),
+% y(-1)=-2, y(-2)=-3, x(-1)=1, x(-2)=1. Input x(n) = cos(pi*n/3)u(n).
+% (Manual's code uses 3*cos(...). Match the amplitude in your question.)
+%---------------------------------------------------------------
+clc; clear; close all;
+a = [1 -0.95 0.9025]; % y terms moved to the left
+b = [1 1 1]/3;
+ic = filtic(b,a,[-2 -3],[1 1]);
+n = 0:100;
+x = cos(n*pi/3);
+y = filter(b,a,x,ic);
+subplot(2,1,1); plot(n,x); title('Input');
+subplot(2,1,2); plot(n,y); title('Output');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-3: y(n) - 1.81y(n-1) + 0.81y(n-2) = x(n) + 0.5x(n-1).
+% Find (a) partial fractions (b) pole-zero plot (c) frequency response
+% (d) impulse response (e) output for 3cos(pi*n/3)u[n].
+%---------------------------------------------------------------
+clc; clear; close all;
+a = [1 -1.81 0.81]; b = [1 0.5 0];
+[r,p,k] = residuez(b,a) % (a) r = 7.89 -6.89, p = 1 0.81
+[z,p,g] = tf2zp(b,a) % zeros, poles, gain
+zplane(b,a); % (b)
+[h,w] = freqz(b,a); figure; % (c)
+subplot(2,1,1); plot(w,abs(h)); title('Magnitude');
+subplot(2,1,2); plot(w,angle(h)); title('Phase');
+[hi,ni] = impz(b,a,15); figure; % (d)
+stem(ni,hi); title('Impulse response');
+n = 0:100; x = 3*cos(n*pi/3); % (e)
+y = filter(b,a,x); figure;
+subplot(2,1,1); plot(n,x); subplot(2,1,2); plot(n,y);
+
+
+%---------------------------------------------------------------
+% EXERCISE Q1: h[n] = 0.5^n(u[n]-u[n-10]). Find y[n], 0<=n<=10 for
+% (a) x[n] = 0.8^n(u[n]-u[n-5])
+% (b) x[n] = delta[n] + 3delta[n-1] + 4delta[n-3].
+%---------------------------------------------------------------
+clc; clear; close all;
+u = @(n) double(n>=0);
+n = 0:10;
+h = 0.5.^n .* (u(n)-u(n-10));
+xa = 0.8.^n .* (u(n)-u(n-5));
+xb = [1 3 0 4]; % deltas at n = 0,1,3
+ya = conv(xa,h); yb = conv(xb,h);
+subplot(2,1,1); stem(n,ya(1:11)); title('(a) y[n]');
+subplot(2,1,2); stem(n,yb(1:11)); title('(b) y[n]');
+
+
+%---------------------------------------------------------------
+% EXERCISE Q2: Anti-causal system H(z) = (z^2-1)/(z-3)^2. Find
+% (a) impulse response (b) difference equation (c) pole-zero plot
+% (d) output for x(n) = 3sin(pi*n/3)u(n).
+%---------------------------------------------------------------
+clc; clear; close all;
+% divide num & den by z^2: H = (1 - z^-2)/(1 - 6z^-1 + 9z^-2)
+b = [1 0 -1]; a = [1 -6 9];
+disp('y[n] - 6y[n-1] + 9y[n-2] = x[n] - x[n-2]'); % (b)
+zplane(b,a); title('Pole-zero'); % (c)
+% (a) anti-causal: get causal h of H(1/z), then flip time
+[g,m] = impz(fliplr(b),fliplr(a),20);
+h = flipud(g)'; nh = -19:0; % h[n] for n<=0
+figure; stem(nh,h); title('Impulse response (anti-causal)');
+% (d)
+n = 0:50; x = 3*sin(n*pi/3);
+y = conv(x,h); ny = (n(1)+nh(1)):(n(end)+nh(end));
+figure; stem(ny,y); title('Output');
+% Anti-causal = ROC |z|<3, so h[n] lives at n<=0. Trick: H(1/z) is causal
+% -> impz -> flip. (If your teacher accepts the causal answer: h = impz(b,a,20).)
+
+
+%---------------------------------------------------------------
+% EXERCISE Q3: Find the system function from given zeros, poles and gain.
+% Test for different values.
+%---------------------------------------------------------------
+clc; clear; close all;
+z = [0.5; -0.5]; % zeros (column vectors)
+p = [0.8; 0.3+0.4j; 0.3-0.4j];
+k = 2; % gain
+[b,a] = zp2tf(z,p,k);
+disp('Numerator b:'); disp(b);
+disp('Denominator a:'); disp(a);
+zplane(b,a);
+% Change z, p, k and rerun. Keep complex poles in conjugate pairs.
+
+
+%---------------------------------------------------------------
+% EXERCISE Q4: y[n] = x[n] - x[n-1] + 0.81y[n-2], y(-1) = y(-2) = 2.
+% Input x(n) = 0.7^n u[n+1].
+% (Manual says y(-1) = y(-3) = 2, likely a typo for y(-2).
+%  u[n+1] means x(-1) = 0.7^-1 is an initial input.)
+%---------------------------------------------------------------
+clc; clear; close all;
+a = [1 0 -0.81]; b = [1 -1];
+yi = [2 2]; % y(-1), y(-2)
+xi = 0.7^(-1); % x(-1): u[n+1] is ON at n = -1
+ic = filtic(b,a,yi,xi);
+n = 0:50;
+x = 0.7.^n;
+y = filter(b,a,x,ic);
+stem(n,y); title('Response');
+
+
+
+#####################################################################
+# EXPERIMENT 3: SIGNALS AND SYSTEMS IN FREQUENCY DOMAIN (MATLAB)
+#####################################################################
+
+%---------------------------------------------------------------
+% Patterns
+%---------------------------------------------------------------
+
+% Spectrum in Hz (used again in Exp 4 and 5)
+X = fft(x,512);
+L = length(X)/2;
+f = (0:L-1)/L*(Fs/2); % Hz axis
+plot(f,abs(X(1:L))); xlabel('Hz');
+
+% Frequency response from difference equation
+[h,w] = freqz(b,a);
+plot(w/pi,abs(h)); xlabel('\omega/\pi');
+
+% DTFT by formula (any w range)
+w = linspace(-2*pi,2*pi,801);
+X = x*exp(-1j*n'*w); % n row, w row
+
+% Circular conv
+y = cconv(x1,x2,N); % direct
+z = ifft(fft(x1,N).*fft(x2,N)); % DFT method
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-1: DTFT and DFT of x[n] = 0.5^n u[n]; plot magnitude and phase.
+%---------------------------------------------------------------
+clc; clear; close all;
+N = 32; n = 0:N-1; w = 2*pi*n/N;
+x = 0.5.^n;
+X = fft(x);
+subplot(2,1,1); plot(w,abs(X)); title('DTFT magnitude');
+subplot(2,1,2); plot(w,angle(X)); title('DTFT phase');
+figure;
+subplot(2,1,1); stem(n,abs(X)); title('DFT magnitude');
+subplot(2,1,2); stem(n,angle(X)); title('DFT phase');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-2: DFT and DTFT of 20 cycles of a 50 Hz sine sampled at 1000 Hz.
+%---------------------------------------------------------------
+clc; clear; close all;
+f = 50; Fs = 1000;
+t = 0:1/Fs:20/f; % 20 cycles
+x = sin(2*pi*f*t);
+X = fft(x,256);
+subplot(2,1,1); stem(abs(X)); title('DFT magnitude');
+subplot(2,1,2); stem(angle(X)); title('DFT phase');
+L = length(X)/2; fr = (0:L-1)/L*(Fs/2);
+figure;
+subplot(2,1,1); plot(fr,abs(X(1:L))); title('DTFT magnitude');
+subplot(2,1,2); plot(fr,angle(X(1:L))); xlabel('Hz'); % peak at 50 Hz
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-3: Circular convolution of x1 = {1..8} and x2 = {1,1,1,1}
+% using DFT-IDFT; verify directly. Also linear conv via DFT.
+% (No semicolons on purpose, so the results print.)
+%---------------------------------------------------------------
+clc; clear; close all;
+x1 = [1 2 3 4 5 6 7 8]; x2 = [1 1 1 1];
+N = max(length(x1),length(x2));
+y = cconv(x1,x2,N) % direct
+z = ifft(fft(x1,N).*fft(x2,N)) % DFT-IDFT
+N = length(x1)+length(x2)-1; % for LINEAR conv
+yy = conv(x1,x2)
+zz = ifft(fft(x1,N).*fft(x2,N))
+
+
+%---------------------------------------------------------------
+% EXERCISE Q1: x[n] = (0.9e^(j*pi/3))^n, 0<=n<=15.
+% Find X(e^jw) and verify periodicity.
+%---------------------------------------------------------------
+clc; clear; close all;
+n = 0:15;
+x = (0.9*exp(1j*pi/3)).^n;
+w = linspace(-2*pi,2*pi,801); % two periods
+X = x*exp(-1j*n'*w); % DTFT formula
+subplot(2,1,1); plot(w/pi,abs(X)); title('|X|');
+subplot(2,1,2); plot(w/pi,angle(X)); title('Phase'); xlabel('\omega/\pi');
+% plot repeats every 2 (i.e. 2*pi) -> periodic
+
+
+%---------------------------------------------------------------
+% EXERCISE Q2: Frequency response and filter type for:
+% (a) y+0.13y1+0.52y2+0.3y3 = 0.16x-0.48x1+0.48x2-0.16x3
+% (b) y-0.268y2 = 0.634x-0.634x2
+% (c) y+0.268y2 = 0.634x+0.634x2
+% (d) 10y-5y1+y2 = x-5x1+10x2
+%---------------------------------------------------------------
+clc; clear; close all;
+B = {[0.16 -0.48 0.48 -0.16], [0.634 0 -0.634], [0.634 0 0.634], [1 -5 10]};
+A = {[1 0.13 0.52 0.3], [1 0 -0.268], [1 0 0.268], [10 -5 1]};
+T = {'(a) HPF','(b) BPF','(c) BSF (notch)','(d) All-pass'};
+for i = 1:4
+ [h,w] = freqz(B{i},A{i});
+ subplot(2,2,i); plot(w/pi,abs(h)); title(T{i}); xlabel('\omega/\pi');
+end
+% y1 = y[n-1] etc. Missing delays get 0.
+% Answers: (a) HPF (b) BPF (c) band-stop (d) all-pass (|H| = 1).
+
+
+%---------------------------------------------------------------
+% EXERCISE Q3: Frequency response of a causal 3-point moving averager.
+% Corrupt 100 samples of 0.9u[n] with noise, filter, plot.
+%---------------------------------------------------------------
+clc; clear; close all;
+b = [1 1 1]/3; a = 1; % y = (x[n]+x[n-1]+x[n-2])/3
+[h,w] = freqz(b,a);
+subplot(3,1,1); plot(w/pi,abs(h)); title('Moving average (LPF)');
+n = 0:99;
+s = 0.9*ones(1,100); % 0.9 u[n]
+x = s + 0.2*randn(1,100); % corrupted
+y = filter(b,a,x);
+subplot(3,1,2); plot(n,x); title('Noisy input');
+subplot(3,1,3); plot(n,y); title('Smoothed output');
+% If your question means 0.9^n u[n], use s = 0.9.^n;
+
+
+%---------------------------------------------------------------
+% EXERCISE Q4: DFT of a multitone sine (30, 80, 120 Hz);
+% plot magnitude vs frequency in Hz.
+%---------------------------------------------------------------
+clc; clear; close all;
+Fs = 1000; t = 0:1/Fs:1;
+x = sin(2*pi*30*t) + sin(2*pi*80*t) + sin(2*pi*120*t);
+X = fft(x,1024);
+L = length(X)/2; f = (0:L-1)/L*(Fs/2);
+plot(f,abs(X(1:L))); xlabel('Frequency (Hz)'); ylabel('|X|');
+% Three peaks at 30, 80, 120 Hz.
+
+
+
+#####################################################################
+# EXPERIMENT 4: IIR FILTER DESIGN (MATLAB)
+#####################################################################
+
+%---------------------------------------------------------------
+% Patterns
+%---------------------------------------------------------------
+
+% THE IIR template (swap the 2 function names)
+[N,wc] = buttord(wp,ws,rp,rs,'s'); % order
+[b,a] = butter(N,wc,'s'); % coefficients
+[h,w] = freqs(b,a); % analog response
+semilogx(w/(2*pi),20*log10(abs(h)));
+
+% Family table
+% buttord  -> butter(N,wc,'s')
+% cheb1ord -> cheby1(N,rp,wc,'s')
+% cheb2ord -> cheby2(N,rs,wc,'s')
+% ellipord -> ellip(N,rp,rs,wc,'s')
+% High-pass: add 'high' -> butter(N,wc,'high','s')
+
+% Analog -> digital (impulse invariance)
+[bz,az] = impinvar(bs,as); % T = 1
+[h,w] = freqz(bz,az);
+plot(w/pi,20*log10(abs(h)));
+
+% Direct digital filter (Fs given)
+[b,a] = butter(3, 100/(Fs/2)); % fc normalized
+y = filter(b,a,x);
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-1 (Analog): 5th-order Butterworth prototype, then scale to
+% cutoff 0.5*pi rad/s.
+%---------------------------------------------------------------
+clc; clear; close all;
+N = 5;
+[z,p,k] = buttap(N); % prototype (wc = 1)
+[num,den] = zp2tf(z,p,k);
+[h,w] = freqs(num,den);
+semilogx(w,20*log10(abs(h))); title('Prototype');
+wc = 0.5*pi;
+p1 = p*wc; k1 = k*wc^N; % scale poles and gain
+[num1,den1] = zp2tf(z,p1,k1)
+[h1,w1] = freqs(num1,den1);
+figure; semilogx(w1,20*log10(abs(h1))); title('Scaled filter');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-2 (Analog): Butterworth LPF, fp = 100 Hz, fs = 500 Hz,
+% Rp = 1 dB, Rs = 40 dB.
+%---------------------------------------------------------------
+clc; clear; close all;
+wp = 2*pi*100; ws = 2*pi*500; rp = 1; rs = 40;
+[N,wc] = buttord(wp,ws,rp,rs,'s') % N = 4
+[b,a] = butter(N,wc,'s');
+[h,w] = freqs(b,a);
+semilogx(w/(2*pi),20*log10(abs(h))); grid on;
+xlabel('Hz'); ylabel('dB');
+
+
+%---------------------------------------------------------------
+% EXERCISE Q1 (Analog): fp = 200 Hz, Rp = 1 dB, fs = 700 Hz, Rs = 50 dB.
+% Design LPF: Butterworth, Cheby-I, Cheby-II, Elliptic. Compare.
+%---------------------------------------------------------------
+clc; clear; close all;
+wp = 2*pi*200; ws = 2*pi*700; rp = 1; rs = 50;
+[N1,w1] = buttord(wp,ws,rp,rs,'s'); [b1,a1] = butter(N1,w1,'s');
+[N2,w2] = cheb1ord(wp,ws,rp,rs,'s'); [b2,a2] = cheby1(N2,rp,w2,'s');
+[N3,w3] = cheb2ord(wp,ws,rp,rs,'s'); [b3,a3] = cheby2(N3,rs,w3,'s');
+[N4,w4] = ellipord(wp,ws,rp,rs,'s'); [b4,a4] = ellip(N4,rp,rs,w4,'s');
+w = 2*pi*(1:2000); % common axis, 1..2000 Hz
+h1 = freqs(b1,a1,w); h2 = freqs(b2,a2,w);
+h3 = freqs(b3,a3,w); h4 = freqs(b4,a4,w);
+f = w/(2*pi);
+plot(f,20*log10(abs(h1)),f,20*log10(abs(h2)),f,20*log10(abs(h3)),f,20*log10(abs(h4)));
+legend('Butter','Cheby1','Cheby2','Ellip'); ylim([-80 5]); grid on;
+disp([N1 N2 N3 N4]) % orders: 6 4 4 3
+% Comparison: Butterworth needs the highest order (flat). Elliptic needs
+% the lowest (ripple in both bands).
+
+
+%---------------------------------------------------------------
+% EXERCISE Q2 (Analog): High-pass, fp = 1 kHz, Rp = 1 dB, fs = 500 Hz,
+% Rs = 50 dB. (a) Butterworth (b) Cheby-I.
+%---------------------------------------------------------------
+clc; clear; close all;
+wp = 2*pi*1000; ws = 2*pi*500; rp = 1; rs = 50;
+[N1,w1] = buttord(wp,ws,rp,rs,'s'); [b1,a1] = butter(N1,w1,'high','s');
+[N2,w2] = cheb1ord(wp,ws,rp,rs,'s'); [b2,a2] = cheby1(N2,rp,w2,'high','s');
+[h1,w] = freqs(b1,a1); h2 = freqs(b2,a2,w);
+semilogx(w/(2*pi),20*log10(abs(h1)), w/(2*pi),20*log10(abs(h2)));
+legend('Butterworth','Chebyshev-I'); xlabel('Hz'); grid on;
+% High-pass: ws < wp, and add 'high'.
+
+
+%---------------------------------------------------------------
+% EXAMPLE Part B Ex-1 (Digital): LPF wp = 0.2*pi, ws = 0.3*pi, Rp = 1 dB,
+% Rs = 15 dB. Butterworth + impulse invariance.
+%---------------------------------------------------------------
+clc; clear; close all;
+wp = 0.2*pi; ws = 0.3*pi; rp = 1; rs = 15;
+[N,wc] = buttord(wp,ws,rp,rs,'s');
+[bs,as] = butter(N,wc,'s');
+[bz,az] = impinvar(bs,as); % T = 1
+[h,w] = freqz(bz,az);
+plot(w/pi,20*log10(abs(h))); grid on; xlabel('\omega/\pi');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Part B Ex-2 (Digital): Multitone 50 Hz + 200 Hz through
+% 3rd-order Butterworth LPF (fc = 100 Hz). Plot input and output spectra.
+%---------------------------------------------------------------
+clc; clear; close all;
+Fs = 1000;
+[b,a] = butter(3,100/(Fs/2)); % digital LPF
+t = 0:1/Fs:1;
+x = sin(2*pi*50*t) + sin(2*pi*200*t);
+y = filter(b,a,x);
+X = fft(x,512); Y = fft(y,512);
+L = 256; f = (0:L-1)/L*(Fs/2);
+subplot(2,1,1); plot(f,abs(X(1:L))); title('Input spectrum');
+subplot(2,1,2); plot(f,abs(Y(1:L))); title('Output spectrum (200 Hz gone)');
+
+
+%---------------------------------------------------------------
+% EXERCISE Part B Q1: H(s) = (s+1)/(s^2+5s+1) -> H(z) by impulse
+% invariance, T = 0.1 s. Plot analog and digital magnitude responses.
+%---------------------------------------------------------------
+clc; clear; close all;
+b = [1 1]; a = [1 5 1];
+T = 0.1; Fs = 1/T;
+[bz,az] = impinvar(b,a,Fs) % H(z) coefficients
+[ha,wa] = freqs(b,a); % analog (rad/s)
+[hd,wd] = freqz(bz,az,512,Fs); % digital (Hz)
+plot(wa/(2*pi),abs(ha), wd,abs(hd)/T); % /T to match gain
+legend('Analog','Digital'); xlabel('Hz'); xlim([0 Fs/2]);
+% By hand: poles -0.2087 and -4.7913,
+% H(s) = 0.1727/(s+0.2087) + 0.8273/(s+4.7913)
+% -> H(z) = sum T*A/(1 - e^(pT) z^-1), with e^(-0.02087) = 0.9793
+% and e^(-0.4791) = 0.6193.
+% Comment: they match at low frequency, with slight aliasing near Fs/2.
+
+
+%---------------------------------------------------------------
+% EXERCISE Part B Q2: Digital LPF wp = 0.3*pi, ws = 0.5*pi, Rp = 1 dB,
+% Rs = 20 dB using (i) Cheby-I (ii) Cheby-II (iii) Elliptic.
+% Impulse invariance, T = 1.
+%---------------------------------------------------------------
+clc; clear; close all;
+wp = 0.3*pi; ws = 0.5*pi; rp = 1; rs = 20;
+[N,wc] = cheb1ord(wp,ws,rp,rs,'s'); [bs,as] = cheby1(N,rp,wc,'s');
+[b1,a1] = impinvar(bs,as);
+[N,wc] = cheb2ord(wp,ws,rp,rs,'s'); [bs,as] = cheby2(N,rs,wc,'s');
+[b2,a2] = impinvar(bs,as);
+[N,wc] = ellipord(wp,ws,rp,rs,'s'); [bs,as] = ellip(N,rp,rs,wc,'s');
+[b3,a3] = impinvar(bs,as);
+[h1,w] = freqz(b1,a1); h2 = freqz(b2,a2,w); h3 = freqz(b3,a3,w);
+plot(w/pi,20*log10(abs(h1)), w/pi,20*log10(abs(h2)), w/pi,20*log10(abs(h3)));
+legend('Cheby-I','Cheby-II','Elliptic'); xlabel('\omega/\pi'); grid on;
+% Same template 3 times. Only the ord/design function pair changes.
+% If impinvar errors on Cheby-II (numerator order = denominator order,
+% N = 4 here), use [b2,a2] = bilinear(bs,as,1); and mention that impulse
+% invariance is a poor fit for Cheby-II (its stopband doesn't decay,
+% so it aliases).
+
+
+
+#####################################################################
+# EXPERIMENT 5: FIR FILTER DESIGN (MATLAB)
+#####################################################################
+
+%---------------------------------------------------------------
+% Patterns
+%---------------------------------------------------------------
+
+% THE FIR template
+tw = abs(wp-ws); N = ceil(8/tw);
+wc = (wp+ws)/2;
+b = fir1(N,wc,'low',hamming(N+1)); % 'high','bandpass','stop'
+[h,w] = freqz(b,1);
+plot(w/pi,20*log10(abs(h)));
+
+% Windows (all take length N+1)
+% rectwin(N+1) bartlett(N+1) hanning(N+1)
+% hamming(N+1) blackman(N+1) kaiser(N+1,beta)
+
+% Frequency sampling (memorize, the same every time)
+k1 = 0:floor((M-1)/2); k2 = floor((M-1)/2)+1:M-1;
+al = (M-1)/2;
+ph = [-al*2*pi*k1/M, al*2*pi*(M-k2)/M];
+b = real(ifft(Hr.*exp(1j*ph), M));
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-1: FIR LPF, Hamming window, wp = 0.2*pi, ws = 0.4*pi,
+% Rp = 0.25 dB, As = 50 dB.
+%---------------------------------------------------------------
+clc; clear; close all;
+wp = 0.2; ws = 0.4;
+N = ceil(8/(ws-wp)); % 40
+wc = (wp+ws)/2;
+b = fir1(N,wc,'low',hamming(N+1));
+[h,w] = freqz(b,1);
+plot(w/pi,20*log10(abs(h))); grid on; title('Hamming LPF');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-2: FIR HPF, wp = 0.5*pi, ws = 0.3*pi, As = 40 dB.
+% (fir1 high-pass needs an even N: 40 here, OK)
+%---------------------------------------------------------------
+clc; clear; close all;
+wp = 0.5; ws = 0.3;
+N = ceil(8/(wp-ws));
+wc = (wp+ws)/2;
+b = fir1(N,wc,'high',hanning(N+1)); % Hanning gives 44 dB
+[h,w] = freqz(b,1);
+plot(w/pi,20*log10(abs(h))); grid on; title('Hanning HPF');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-3: Signal 100 + 300 + 500 Hz, Fs = 2000.
+% Design a bandpass FIR to keep 300 Hz. Plot spectra.
+%---------------------------------------------------------------
+clc; clear; close all;
+Fs = 2000; t = 0:1/Fs:1;
+x = sin(2*pi*100*t)+sin(2*pi*300*t)+sin(2*pi*500*t);
+wp = [250 350]/(Fs/2); ws = [150 450]/(Fs/2);
+wc = (wp+ws)/2;
+N = ceil(8/min(abs(wp-ws)));
+b = fir1(N,wc,'bandpass',bartlett(N+1));
+[h,f] = freqz(b,1,512,Fs);
+plot(f,20*log10(abs(h))); title('BPF');
+y = filter(b,1,x);
+X = fft(x,512); Y = fft(y,512); L = 256; fr = (0:L-1)/L*(Fs/2);
+figure;
+subplot(2,1,1); plot(fr,abs(X(1:L))); title('Input');
+subplot(2,1,2); plot(fr,abs(Y(1:L))); title('Output (only 300 Hz)');
+
+
+%---------------------------------------------------------------
+% EXAMPLE Ex-4: LPF of Ex-1 using frequency sampling (M = 20).
+%---------------------------------------------------------------
+clc; clear; close all;
+M = 20;
+Hr = [1 1 1 zeros(1,15) 1 1]; % desired |H|, symmetric
+k1 = 0:floor((M-1)/2); k2 = floor((M-1)/2)+1:M-1;
+al = (M-1)/2;
+ph = [-al*2*pi*k1/M, al*2*pi*(M-k2)/M];
+b = real(ifft(Hr.*exp(1j*ph), M));
+[h,w] = freqz(b,1);
+plot(w/pi,20*log10(abs(h))); grid on; title('Freq. sampling LPF');
+
+
+%---------------------------------------------------------------
+% EXERCISE Q1: LPF wp = 0.2*pi, ws = 0.4*pi using (a) Rectangular
+% (b) Hanning (c) Kaiser. Compare.
+%---------------------------------------------------------------
+clc; clear; close all;
+wp = 0.2; ws = 0.4; N = ceil(8/(ws-wp)); wc = (wp+ws)/2;
+b1 = fir1(N,wc,'low',rectwin(N+1));
+b2 = fir1(N,wc,'low',hanning(N+1));
+b3 = fir1(N,wc,'low',kaiser(N+1,5)); % beta = 5
+[h1,w] = freqz(b1,1); h2 = freqz(b2,1,w); h3 = freqz(b3,1,w);
+plot(w/pi,20*log10(abs(h1)), w/pi,20*log10(abs(h2)), w/pi,20*log10(abs(h3)));
+legend('Rect','Hanning','Kaiser'); grid on; ylim([-100 5]);
+% Rect: sharpest transition, worst stopband (~21 dB). Hanning ~44 dB.
+% Kaiser: tunable via beta (bigger beta = more attenuation, wider transition).
+
+
+%---------------------------------------------------------------
+% EXERCISE Q2: Linear-phase BPF, passband [400 500] Hz, stopband
+% [300 600] Hz, Rp = 0.5 dB, As = 40 dB, Fs = 2 kHz.
+% (a) Hamming (b) Kaiser.
+%---------------------------------------------------------------
+clc; clear; close all;
+Fs = 2000;
+wp = [400 500]/(Fs/2); ws = [300 600]/(Fs/2);
+wc = (wp+ws)/2;
+N = ceil(8/min(abs(wp-ws))); % 80
+b1 = fir1(N,wc,'bandpass',hamming(N+1));
+b2 = fir1(N,wc,'bandpass',kaiser(N+1,3.4)); % beta ~3.4 for 40 dB
+[h1,f] = freqz(b1,1,512,Fs); h2 = freqz(b2,1,512,Fs);
+plot(f,20*log10(abs(h1)), f,20*log10(abs(h2)));
+legend('Hamming','Kaiser'); xlabel('Hz'); grid on;
+% Kaiser beta for As dB (21 < As < 50):
+% beta = 0.5842(As-21)^0.4 + 0.07886(As-21).
+
+
+%---------------------------------------------------------------
+% EXERCISE Q3: Repeat Ex-4 with transition samples
+% Hr = {1,1,1,0.5,0.1,zeros(1,11),0.1,0.5,1,1}. Compare.
+%---------------------------------------------------------------
+clc; clear; close all;
+M = 20;
+Hr = [1 1 1 0.5 0.1 zeros(1,11) 0.1 0.5 1 1];
+k1 = 0:floor((M-1)/2); k2 = floor((M-1)/2)+1:M-1;
+al = (M-1)/2;
+ph = [-al*2*pi*k1/M, al*2*pi*(M-k2)/M];
+b = real(ifft(Hr.*exp(1j*ph), M));
+[h,w] = freqz(b,1);
+plot(w/pi,20*log10(abs(h))); grid on;
+% Result: stopband attenuation improves a lot. Cost: a wider transition band.
+
+
+%---------------------------------------------------------------
+% EXERCISE Q4: Design the BPF of Q2 (400-500 Hz, Fs = 2 kHz) using
+% frequency sampling.
+%---------------------------------------------------------------
+clc; clear; close all;
+Fs = 2000; M = 40; % bin spacing Fs/M = 50 Hz
+Hr = zeros(1,M);
+k = [8 9 10]; % 400, 450, 500 Hz
+Hr(k+1) = 1; Hr(M-k+1) = 1; % + mirror half
+Hr([7 11]+1) = 0.4; Hr(M-[7 11]+1) = 0.4; % transition samples
+k1 = 0:floor((M-1)/2); k2 = floor((M-1)/2)+1:M-1;
+al = (M-1)/2;
+ph = [-al*2*pi*k1/M, al*2*pi*(M-k2)/M];
+b = real(ifft(Hr.*exp(1j*ph), M));
+[h,f] = freqz(b,1,512,Fs);
+plot(f,20*log10(abs(h))); xlabel('Hz'); grid on;
+% Key step: bin k = f/(Fs/M). Set the passband bins to 1 AND their
+% mirrors at M-k.
+
+
+
+#####################################################################
+# EXPERIMENT 6: IMAGE PROCESSING (MATLAB)
+#####################################################################
+
+%---------------------------------------------------------------
+% Patterns
+%---------------------------------------------------------------
+
+% THE image template
+img = imread('peppers.png');
+g = rgb2gray(img);
+out = ...; % one operation
+subplot(1,2,1); imshow(g); title('Original');
+subplot(1,2,2); imshow(out); title('Result');
+
+% One-liners to memorize
+% imhist(g)  histeq(g)  255-g
+% fspecial('average',[5 5])  fspecial('gaussian',[5 5],1)
+% fspecial('unsharp')  imfilter(g,h)
+% imnoise(g,'salt & pepper',0.05)  medfilt2(g,[3 3])
+% imrotate(img,90)  flip(img,2)  flip(img,1)  imresize(img,0.5)
+% img(:,:,1) = red  imcrop  im2double
+
+
+%---------------------------------------------------------------
+% EXAMPLES 1-3: Read and info, grayscale + histogram, histogram equalization.
+%---------------------------------------------------------------
+img = imread('peppers.png');
+imshow(img); disp(size(img)); disp(class(img));
+g = rgb2gray(img);
+figure; imshow(g); figure; imhist(g);
+eq = histeq(g);
+figure;
+subplot(2,2,1); imshow(g); title('Original');
+subplot(2,2,2); imshow(eq); title('Equalized');
+subplot(2,2,3); imhist(g); subplot(2,2,4); imhist(eq);
+
+
+%---------------------------------------------------------------
+% EXAMPLES 4-5: Smoothing, sharpening, negative.
+%---------------------------------------------------------------
+g = rgb2gray(imread('peppers.png'));
+sm = imfilter(g, fspecial('average',[5 5]));
+sh = imfilter(g, fspecial('unsharp'));
+ng = 255 - g;
+subplot(2,2,1); imshow(g); title('Original');
+subplot(2,2,2); imshow(sm); title('Smoothed');
+subplot(2,2,3); imshow(sh); title('Sharpened');
+subplot(2,2,4); imshow(ng); title('Negative');
+
+
+%---------------------------------------------------------------
+% EXAMPLES 6-7: Log and gamma transforms, Gaussian blur.
+%---------------------------------------------------------------
+img = im2double(rgb2gray(imread('peppers.png')));
+lg = log(1+img); lg = lg/max(lg(:)); % normalize
+gm = img.^0.5; % gamma = 0.5
+bl = imfilter(img, fspecial('gaussian',[5 5],1));
+subplot(2,2,1); imshow(img); title('Original');
+subplot(2,2,2); imshow(lg); title('Log');
+subplot(2,2,3); imshow(gm); title('Gamma 0.5');
+subplot(2,2,4); imshow(bl); title('Gaussian blur');
+
+
+%---------------------------------------------------------------
+% EXAMPLES 8-10: Crop ROI, median filter for noise, RGB extraction.
+%---------------------------------------------------------------
+img = imread('peppers.png');
+imshow(img); roi = imcrop; figure; imshow(roi); % drag box, double-click
+g = rgb2gray(img);
+nz = imnoise(g,'salt & pepper',0.05);
+md = medfilt2(nz,[3 3]);
+figure;
+subplot(1,3,1); imshow(g); subplot(1,3,2); imshow(nz); subplot(1,3,3); imshow(md);
+figure;
+subplot(2,2,1); imshow(img);
+subplot(2,2,2); imshow(img(:,:,1)); title('Red');
+subplot(2,2,3); imshow(img(:,:,2)); title('Green');
+subplot(2,2,4); imshow(img(:,:,3)); title('Blue');
+
+
+%---------------------------------------------------------------
+% EXERCISE Q1: Grayscale, then brightness +40 and -40.
+% Show original, brighter, darker.
+%---------------------------------------------------------------
+clc; clear; close all;
+g = rgb2gray(imread('peppers.png'));
+br = g + 40; % uint8 clips at 255
+dk = g - 40; % clips at 0
+subplot(1,3,1); imshow(g); title('Original');
+subplot(1,3,2); imshow(br); title('Brighter');
+subplot(1,3,3); imshow(dk); title('Darker');
+
+
+%---------------------------------------------------------------
+% EXERCISE Q2: Rotate 90 and 180 degrees, flip horizontally and vertically.
+%---------------------------------------------------------------
+clc; clear; close all;
+img = imread('peppers.png');
+subplot(2,3,1); imshow(img); title('Original');
+subplot(2,3,2); imshow(imrotate(img,90)); title('Rotate 90');
+subplot(2,3,3); imshow(imrotate(img,180)); title('Rotate 180');
+subplot(2,3,4); imshow(flip(img,2)); title('Flip horizontal');
+subplot(2,3,5); imshow(flip(img,1)); title('Flip vertical');
+% flip(img,2) = left<->right, flip(img,1) = up<->down.
+% Works on color images (fliplr/flipud also OK for gray).
+
+
+%---------------------------------------------------------------
+% EXERCISE Q3: Salt & pepper noise, then mean filter vs median filter.
+%---------------------------------------------------------------
+clc; clear; close all;
+g = rgb2gray(imread('peppers.png'));
+nz = imnoise(g,'salt & pepper',0.05);
+mn = imfilter(nz, fspecial('average',[3 3]));
+md = medfilt2(nz,[3 3]);
+subplot(2,2,1); imshow(g); title('Original');
+subplot(2,2,2); imshow(nz); title('Noisy');
+subplot(2,2,3); imshow(mn); title('Mean filter');
+subplot(2,2,4); imshow(md); title('Median filter');
+% Median wins: it removes the dots and keeps edges sharp.
+% Mean only smears the dots and blurs.
+
+
+%---------------------------------------------------------------
+% EXERCISE Q4: Resize to half and to double (interpolation).
+%---------------------------------------------------------------
+clc; clear; close all;
+img = imread('peppers.png');
+sm = imresize(img,0.5,'bilinear');
+lg = imresize(img,2,'bilinear');
+disp(size(img)); disp(size(sm)); disp(size(lg));
+figure; imshow(img); title('Original');
+figure; imshow(sm); title('Half');
+figure; imshow(lg); title('Double');
+% Methods: 'nearest', 'bilinear', 'bicubic'.
+
+
+
+#####################################################################
+# EXPERIMENT 7: CCS BASICS + DFT ON TMS320C6748 (C CODE)
+#####################################################################
+
+/*---------------------------------------------------------------
+ C program skeleton
+ ---------------------------------------------------------------*/
+#include <stdio.h>
+#include <math.h>
+#define PI 3.14159265
+#define N 8
+
+void main()
+{
+ int k, n;
+ /* loops here */
+}
+
+/* DFT core (2 lines to remember)
+ Xr[k] += x[n]*cos(2*PI*k*n/N);
+ Xi[k] -= x[n]*sin(2*PI*k*n/N);
+*/
+
+
+/*---------------------------------------------------------------
+ EXAMPLE CCS intro: Generate a sine wave (128 samples) and view it in a graph.
+ Graph settings: buffer 128, 32-bit float, start address m.
+ ---------------------------------------------------------------*/
+#include <stdio.h>
+#include <math.h>
+#define PI 3.14159265
+float m[128]; /* graph start address: m */
+
+void main()
+{
+ int i;
+ for (i = 0; i < 128; i++) {
+ m[i] = sin(2*PI*i/64.0); /* 2 cycles in 128 samples */
+ printf("%f\n", m[i]);
+ }
+}
+
+
+/*---------------------------------------------------------------
+ EXERCISE CCS intro exercise: Generate a random wave.
+ ---------------------------------------------------------------*/
+#include <stdio.h>
+#include <stdlib.h>
+float m[128];
+
+void main()
+{
+ int i;
+ for (i = 0; i < 128; i++) {
+ m[i] = (float)rand()/RAND_MAX - 0.5; /* -0.5 to +0.5 */
+ printf("%f\n", m[i]);
+ }
+}
+
+
+/*---------------------------------------------------------------
+ EXAMPLE Exp 7 Example: N-point DFT of x = (1 1 2 -2 3 0 5 1).
+ Expected: X[0] = 11, X[1] = 0.828 + j4.414, X[2] = -3 - j2, X[4] = 11
+ (check with MATLAB: fft([1 1 2 -2 3 0 5 1])).
+ ---------------------------------------------------------------*/
+#include <stdio.h>
+#include <math.h>
+#define PI 3.14159265
+#define N 8
+float x[N] = {1, 1, 2, -2, 3, 0, 5, 1};
+float Xr[N], Xi[N];
+
+void main()
+{
+ int k, n;
+ for (k = 0; k < N; k++) {
+ Xr[k] = 0; Xi[k] = 0;
+ for (n = 0; n < N; n++) {
+ Xr[k] += x[n]*cos(2*PI*k*n/N);
+ Xi[k] -= x[n]*sin(2*PI*k*n/N);
+ }
+ printf("X[%d] = %7.3f + j(%7.3f)\n", k, Xr[k], Xi[k]);
+ }
+}
+
+
+/*---------------------------------------------------------------
+ EXERCISE Exp 7 Exercise: N-point IDFT of (1 1 2 -2 3 0 5 1).
+ Only 2 changes from the DFT: +sin and /N.
+ Check: ifft([1 1 2 -2 3 0 5 1]). x[0] = 1.375.
+ ---------------------------------------------------------------*/
+#include <stdio.h>
+#include <math.h>
+#define PI 3.14159265
+#define N 8
+float X[N] = {1, 1, 2, -2, 3, 0, 5, 1};
+float xr[N], xi[N];
+
+void main()
+{
+ int k, n;
+ for (n = 0; n < N; n++) {
+ xr[n] = 0; xi[n] = 0;
+ for (k = 0; k < N; k++) {
+ xr[n] += X[k]*cos(2*PI*k*n/N);
+ xi[n] += X[k]*sin(2*PI*k*n/N); /* + sign for IDFT */
+ }
+ xr[n] /= N; xi[n] /= N; /* divide by N */
+ printf("x[%d] = %7.3f + j(%7.3f)\n", n, xr[n], xi[n]);
+ }
+}
+
+
+
+#####################################################################
+# EXPERIMENT 10: AUDIO PROCESSING ON TMS320C6748 (C CODE)
+#####################################################################
+
+/*---------------------------------------------------------------
+ Real-time skeleton (all 3 programs)
+ ---------------------------------------------------------------*/
+#include "L138_aic3106_init.h"
+
+interrupt void interrupt4(void) /* runs every sample */
+{
+ /* read -> process -> write */
+}
+
+int main(void)
+{
+ L138_initialise_intr(FS_48000_HZ, ADC_GAIN_0DB, DAC_ATTEN_0DB);
+ while (1);
+}
+
+/* Circular buffer (delay line)
+ delayed = buffer[i]; // oldest sample
+ buffer[i] = input; // overwrite
+ i = (i + 1) % BUF_SIZE; // wrap
+*/
+
+
+/*---------------------------------------------------------------
+ EXAMPLE: Talk-through program (codec AIC3106).
+ Right channel only: output_right_sample(sample).
+ Left only: output_left_sample(sample).
+ ---------------------------------------------------------------*/
+#include "L138_aic3106_init.h"
+
+interrupt void interrupt4(void)
+{
+ uint32_t sample;
+ sample = input_sample(); /* read L+R */
+ output_sample(sample); /* write same (line 6) */
+ return;
+}
+
+int main(void)
+{
+ L138_initialise_intr(FS_48000_HZ, ADC_GAIN_0DB, DAC_ATTEN_0DB);
+ while (1);
+}
+
+
+/*---------------------------------------------------------------
+ EXERCISE Q1: Echo effect.
+ ---------------------------------------------------------------*/
+#include "L138_aic3106_init.h"
+#define BUF_SIZE 16000 /* 0.33 s at 48 kHz */
+#define GAIN 0.6 /* decay of each echo */
+int16_t buffer[BUF_SIZE];
+int i = 0;
+
+interrupt void interrupt4(void)
+{
+ int16_t input, delayed, output;
+ input = input_left_sample();
+ delayed = buffer[i];
+ output = input + delayed;
+ buffer[i] = input + delayed*GAIN; /* FEEDBACK -> repeating echoes */
+ i = (i + 1) % BUF_SIZE;
+ output_left_sample(output);
+ return;
+}
+
+int main(void)
+{
+ L138_initialise_intr(FS_48000_HZ, ADC_GAIN_0DB, DAC_ATTEN_0DB);
+ while (1);
+}
+
+
+/*---------------------------------------------------------------
+ EXERCISE Q2: Delay effect.
+ Echo vs delay is ONE line:
+ buffer[i] = input + delayed*GAIN (echo) vs buffer[i] = input (delay).
+ ---------------------------------------------------------------*/
+#include "L138_aic3106_init.h"
+#define BUF_SIZE 24000 /* 0.5 s at 48 kHz */
+int16_t buffer[BUF_SIZE];
+int i = 0;
+
+interrupt void interrupt4(void)
+{
+ int16_t input, delayed, output;
+ input = input_left_sample();
+ delayed = buffer[i];
+ output = input + delayed; /* original + ONE delayed copy */
+ buffer[i] = input; /* NO feedback */
+ i = (i + 1) % BUF_SIZE;
+ output_left_sample(output);
+ return;
+}
+
+int main(void)
+{
+ L138_initialise_intr(FS_48000_HZ, ADC_GAIN_0DB, DAC_ATTEN_0DB);
+ while (1);
+}
+
+=====================================================================
+END
+=====================================================================

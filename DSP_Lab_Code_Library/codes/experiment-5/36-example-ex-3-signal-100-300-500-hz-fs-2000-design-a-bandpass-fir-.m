@@ -1,0 +1,14 @@
+clc; clear; close all;
+Fs = 2000; t = 0:1/Fs:1;
+x = sin(2*pi*100*t)+sin(2*pi*300*t)+sin(2*pi*500*t);
+wp = [250 350]/(Fs/2); ws = [150 450]/(Fs/2);
+wc = (wp+ws)/2;
+N = ceil(8/min(abs(wp-ws)));
+b = fir1(N,wc,'bandpass',bartlett(N+1));
+[h,f] = freqz(b,1,512,Fs);
+plot(f,20*log10(abs(h))); title('BPF');
+y = filter(b,1,x);
+X = fft(x,512); Y = fft(y,512); L = 256; fr = (0:L-1)/L*(Fs/2);
+figure;
+subplot(2,1,1); plot(fr,abs(X(1:L))); title('Input');
+subplot(2,1,2); plot(fr,abs(Y(1:L))); title('Output (only 300 Hz)');
